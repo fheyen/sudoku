@@ -2,8 +2,6 @@
 Sudoku generator
 """
 
-# TODO: infer size from matrix instead of param
-
 # use __future__ to provide compatibility with python 3
 from __future__ import absolute_import
 from __future__ import division
