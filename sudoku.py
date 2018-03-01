@@ -2,6 +2,8 @@
 Sudoku generator
 """
 
+# TODO: infer size from matrix instead of param
+
 # use __future__ to provide compatibility with python 3
 from __future__ import absolute_import
 from __future__ import division
@@ -54,10 +56,11 @@ def printmatrixhex(matrix):
     print(output)
 
 
-def checkrows(matrix, size):
+def checkrows(matrix):
     """
     Checks if each row contains each value only once
     """
+    size = len(matrix)
     row_num = 0
     for row in matrix:
         numbercontained = [False for x in range(size)]
@@ -75,10 +78,11 @@ def checkrows(matrix, size):
     return True
 
 
-def checkcols(matrix, size):
+def checkcols(matrix):
     """
     Checks if each column contains each value only once
     """
+    size = len(matrix)
     for col_num in range(size):
         numbercontained = [False for x in range(size)]
         for row_num in range(size):
@@ -95,10 +99,11 @@ def checkcols(matrix, size):
     return True
 
 
-def checkblocks(matrix, size):
+def checkblocks(matrix):
     """
     Checks if each block contains each value only once
     """
+    size = len(matrix)
     blocksize = int(math.sqrt(size))
     row_num = 0
     col_num = 0
@@ -127,18 +132,18 @@ def checkblocks(matrix, size):
     return True
 
 
-def checksudoku(matrix, size):
+def checksudoku(matrix):
     """
     Checks if matrix contains a valid (partially) filled out sudoku
     """
-    if checkrows(matrix, size):
-        if checkcols(matrix, size):
-            if checkblocks(matrix, size):
+    if checkrows(matrix):
+        if checkcols(matrix):
+            if checkblocks(matrix):
                 return True
     return False
 
 
-def trysudoku(matrix, size, row, col, value):
+def trysudoku(matrix, row, col, value):
     """
     Tries to insert value to matrix[row][col] and
     checks if it is a valid sudoku. If yes, the
@@ -147,7 +152,7 @@ def trysudoku(matrix, size, row, col, value):
     """
     oldvalue = matrix[row][col]
     matrix[row][col] = value
-    if checksudoku(matrix, size):
+    if checksudoku(matrix):
         # keep change
         return matrix, True
     else:
@@ -178,7 +183,7 @@ def generatesudoku(size):
         for col in range(size):
             try_num = 1
             for value in range(size):
-                matrix, success = trysudoku(matrix, size, row, col, value)
+                matrix, success = trysudoku(matrix, row, col, value)
                 if success:
                     if verbose:
                         print("success after {0} tries:".format(try_num))
@@ -188,13 +193,47 @@ def generatesudoku(size):
                     break
                 else:
                     try_num += 1
-    return matrix, total_tries
+    return matrix
 
 
-def generatesudoku_randomized(size):
+def recurse(matrix, row, col, depth):
+    size = len(matrix)
+
+    col_new = col + 1
+    row_new = row
+    if col_new == size:
+        col_new = 0
+        row_new = row + 1
+
+    # randomize value
+    array = getrandomarray(size)
+
+    for value in array:
+        # test if valid
+        matrix, success = trysudoku(matrix, row, col, value)
+        if success:
+            # check if sudoku is filled out completely
+            if row == size - 1 and col == size - 1:
+                print("finished!")
+                return matrix, True
+            else:
+                # if not finished, recurse deeper
+                matrix, finished = recurse(
+                    matrix, row_new, col_new, depth+1)
+                if finished:
+                    # pass on result
+                    return matrix, True
+
+    # no success? return and try other path
+    return matrix, False
+
+
+def generatesudoku_randomized_tree(size):
     """
     Generates a fully filled out sudoku with
-    the specified size
+    the specified size.
+
+    Tree search with randomized value choice.
     """
     # check if size is square number
     if not (math.sqrt(size)).is_integer():
@@ -202,47 +241,16 @@ def generatesudoku_randomized(size):
         return
 
     matrix = creatematrix(size, size, size)
-    total_tries = 0
-    for row in range(size):
-        for col in range(size):
-            try_num = 1
-            # randomize value
-            array = getrandomarray(size)
-            for value in array:
-                matrix, success = trysudoku(matrix, size, row, col, value)
-                if success:
-                    if verbose:
-                        print("success after {0} tries:".format(try_num))
-                        printmatrixhex(matrix)
-                    total_tries += try_num
-                    # no further tries required
-                    break
-                else:
-                    try_num += 1
-                # check if failed
-                if try_num == size:
-                    print_verbose("failed at {0}, {1}".format(row, col))
-                    return matrix, total_tries, False
-    return matrix, total_tries, True
-
-
-def generatesudoku_repeated(size, max_repeats):
-    repeats = 1
-    success = False
-    while(not success and repeats < max_repeats):
-        result, total_tries, success = generatesudoku_randomized(size)
-        print("generating... repeat {0} / {1}, success {2}".format(
-            repeats, max_repeats, success))
-        repeats += 1
-    return result, repeats, success
+    matrix, finished = recurse(matrix, 0, 0, 0)
+    return matrix, finished
 
 
 def main():
     global verbose
     verbose = False
 
-    result, repeats, success = generatesudoku_repeated(16, 100000)
-    print("result after a total of {0} tries:".format(repeats))
+    result, finished = generatesudoku_randomized_tree(16)
+    print("finished: ", finished)
     printmatrixhex(result)
 
 
