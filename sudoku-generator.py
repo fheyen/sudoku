@@ -1,5 +1,5 @@
 """
-
+Sudoku generator
 """
 
 # use __future__ to provide compatibility with python 3
@@ -8,6 +8,16 @@ from __future__ import division
 from __future__ import print_function
 
 import math
+import random
+
+
+verbose = False
+
+
+def print_verbose(to_print):
+    global verbose
+    if verbose:
+        print(to_print)
 
 
 def creatematrix(w, h, initialval):
@@ -55,13 +65,13 @@ def checkrows(matrix, size):
             # if placeholder, ignore it
             if value in range(size):
                 if numbercontained[value]:
-                    print(
+                    print_verbose(
                         "Number {0} occurs more than once in row {1}!".format(value, row_num))
                     return False
                 else:
                     numbercontained[value] = True
         row_num += 1
-    print("rows are fine")
+    print_verbose("rows are fine")
     return True
 
 
@@ -76,12 +86,12 @@ def checkcols(matrix, size):
             # if placeholder, ignore it
             if value in range(size):
                 if numbercontained[value]:
-                    print(
+                    print_verbose(
                         "Number {0} occurs more than once in col {1}!".format(value, col_num))
                     return False
                 else:
                     numbercontained[value] = True
-    print("cols are fine")
+    print_verbose("cols are fine")
     return True
 
 
@@ -99,7 +109,7 @@ def checkblocks(matrix, size):
             # if placeholder, ignore it
             if value in range(size):
                 if numbercontained[value]:
-                    print(
+                    print_verbose(
                         "Number {0} occurs more than once in block {1}!".format(value, block_num))
                     return False
                 else:
@@ -113,7 +123,7 @@ def checkblocks(matrix, size):
         if col_num == size:
             col_num = 0
             row_num += blocksize
-    print("blocks are fine")
+    print_verbose("blocks are fine")
     return True
 
 
@@ -146,25 +156,94 @@ def trysudoku(matrix, size, row, col, value):
         return matrix, False
 
 
+def getrandomarray(size):
+    array = [x for x in range(size)]
+    random.shuffle(array)
+    return array
+
+
 def generatesudoku(size):
+    """
+    Generates a fully filled out sudoku with
+    the specified size
+    """
     # check if size is square number
     if not (math.sqrt(size)).is_integer():
         print("{0} is not a square number!".format(size))
         return
 
     matrix = creatematrix(size, size, size)
+    total_tries = 0
     for row in range(size):
         for col in range(size):
-            # TODO: randomize value
+            try_num = 1
             for value in range(size):
                 matrix, success = trysudoku(matrix, size, row, col, value)
-                print(success)
-                if (success):
-                    printmatrixhex(matrix)
+                if success:
+                    if verbose:
+                        print("success after {0} tries:".format(try_num))
+                        printmatrixhex(matrix)
+                    total_tries += try_num
+                    # no further tries required
+                    break
+                else:
+                    try_num += 1
+    return matrix, total_tries
+
+
+def generatesudoku_randomized(size):
+    """
+    Generates a fully filled out sudoku with
+    the specified size
+    """
+    # check if size is square number
+    if not (math.sqrt(size)).is_integer():
+        print("{0} is not a square number!".format(size))
+        return
+
+    matrix = creatematrix(size, size, size)
+    total_tries = 0
+    for row in range(size):
+        for col in range(size):
+            try_num = 1
+            # randomize value
+            array = getrandomarray(size)
+            for value in array:
+                matrix, success = trysudoku(matrix, size, row, col, value)
+                if success:
+                    if verbose:
+                        print("success after {0} tries:".format(try_num))
+                        printmatrixhex(matrix)
+                    total_tries += try_num
+                    # no further tries required
+                    break
+                else:
+                    try_num += 1
+                # check if failed
+                if try_num == size:
+                    print_verbose("failed at {0}, {1}".format(row, col))
+                    return matrix, total_tries, False
+    return matrix, total_tries, True
+
+
+def generatesudoku_repeated(size, max_repeats):
+    repeats = 1
+    success = False
+    while(not success and repeats < max_repeats):
+        result, total_tries, success = generatesudoku_randomized(size)
+        print("generating... repeat {0} / {1}, success {2}".format(
+            repeats, max_repeats, success))
+        repeats += 1
+    return result, repeats, success
 
 
 def main():
-    generatesudoku(16)
+    global verbose
+    verbose = False
+
+    result, repeats, success = generatesudoku_repeated(16, 100000)
+    print("result after a total of {0} tries:".format(repeats))
+    printmatrixhex(result)
 
 
 if __name__ == "__main__":
