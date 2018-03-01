@@ -212,7 +212,6 @@ def recurse(matrix, row, col, depth):
         if success:
             # check if sudoku is filled out completely
             if row == size - 1 and col == size - 1:
-                print("finished!")
                 return matrix, True
             else:
                 # if not finished, recurse deeper
@@ -243,23 +242,40 @@ def generatesudoku(size):
     return matrix, finished
 
 
+def generategaps(matrix, gap_probability):
+    size = len(matrix)
+    for row in range(size):
+        for col in range(size):
+            if random.uniform(0, 1) < gap_probability:
+                matrix[row][col] = size
+    return matrix
+
+
 def main():
     global verbose
     verbose = False
 
     size = 9
+    gap_probability = 0.5
 
-    if len(sys.argv) == 2:
+    if len(sys.argv) == 3:
         size = int(sys.argv[1])
+        gap_probability = int(sys.argv[2])
     else:
-        print("possible arguments: sudoku-size")
+        print("possible arguments:")
+        print("- sudoku size (try 4, 9, 16, 25)")
+        print("- gap probability in [0, 1]")
 
     print("sudoku size: ", size)
 
     result, finished = generatesudoku(size)
     print("finished: ", finished)
-
     printmatrix(result)
+
+    if finished:
+        print("adding gaps with probability", gap_probability)
+        matrix = generategaps(result, gap_probability)
+        printmatrix(matrix)
 
 
 if __name__ == "__main__":
