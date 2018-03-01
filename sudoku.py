@@ -14,15 +14,6 @@ import math
 import random
 
 
-verbose = False
-
-
-def print_verbose(to_print):
-    global verbose
-    if verbose:
-        print(to_print)
-
-
 def creatematrix(w, h, initialval):
     matrix = [[initialval for x in range(w)] for y in range(h)]
     return matrix
@@ -30,29 +21,6 @@ def creatematrix(w, h, initialval):
 
 def createemptysudoku(size):
     return creatematrix(size, size, size)
-
-
-def printmatrixhex(matrix):
-    """
-    Prints a 16 x 16 sudoku matrix with grid lines
-    """
-    lookup = "0123456789abcdefghijklmnopqrstuvwxyz"
-    output = ""
-    row_num = 0
-    output += "-" * 61 + "\n"
-    for row in matrix:
-        output += "|  "
-        col_num = 0
-        for value in row:
-            output += lookup[value] + "  "
-            if col_num % 4 == 3:
-                output += "|  "
-            col_num += 1
-        output += "\n"
-        if (row_num % 4 == 3):
-            output += "-" * 61 + "\n"
-        row_num += 1
-    print(output)
 
 
 def printmatrix(matrix):
@@ -96,13 +64,10 @@ def checkrows(matrix):
             # if placeholder, ignore it
             if value in range(size):
                 if numbercontained[value]:
-                    print_verbose(
-                        "Number {0} occurs more than once in row {1}!".format(value, row_num))
                     return False
                 else:
                     numbercontained[value] = True
         row_num += 1
-    print_verbose("rows are fine")
     return True
 
 
@@ -118,12 +83,9 @@ def checkcols(matrix):
             # if placeholder, ignore it
             if value in range(size):
                 if numbercontained[value]:
-                    print_verbose(
-                        "Number {0} occurs more than once in col {1}!".format(value, col_num))
                     return False
                 else:
                     numbercontained[value] = True
-    print_verbose("cols are fine")
     return True
 
 
@@ -142,8 +104,6 @@ def checkblocks(matrix):
             # if placeholder, ignore it
             if value in range(size):
                 if numbercontained[value]:
-                    print_verbose(
-                        "Number {0} occurs more than once in block {1}!".format(value, block_num))
                     return False
                 else:
                     numbercontained[value] = True
@@ -156,7 +116,6 @@ def checkblocks(matrix):
         if col_num == size:
             col_num = 0
             row_num += blocksize
-    print_verbose("blocks are fine")
     return True
 
 
@@ -251,31 +210,37 @@ def generategaps(matrix, gap_probability):
     return matrix
 
 
-def main():
-    global verbose
-    verbose = False
+def main(size=9, gap_probability=0.5, max_tries=50):
 
-    size = 9
-    gap_probability = 0.5
-
-    if len(sys.argv) == 3:
+    if len(sys.argv) == 4:
         size = int(sys.argv[1])
-        gap_probability = int(sys.argv[2])
+        gap_probability = float(sys.argv[2])
+        max_tries = int(sys.argv[3])
     else:
         print("possible arguments:")
         print("- sudoku size (try 4, 9, 16, 25)")
         print("- gap probability in [0, 1]")
+        print("- max number of tries")
 
-    print("sudoku size: ", size)
+    print("\nsudoku size: ", size)
 
-    result, finished = generatesudoku(size)
-    print("finished: ", finished)
-    printmatrix(result)
+    finished = False
+    tries = 1
 
-    if finished:
-        print("adding gaps with probability", gap_probability)
-        matrix = generategaps(result, gap_probability)
-        printmatrix(matrix)
+    while not finished and tries <= max_tries:
+        result, finished = generatesudoku(size)
+        print("try {0} of {1}, finished: {2}".format(
+            tries, max_tries, finished))
+
+        if finished or tries == max_tries:
+            printmatrix(result)
+            print("adding gaps with probability", gap_probability)
+            matrix = generategaps(result, gap_probability)
+            printmatrix(matrix)
+
+        tries += 1
+
+    return result
 
 
 if __name__ == "__main__":
