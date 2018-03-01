@@ -89,13 +89,13 @@ def checkblocks(matrix, size):
     """
     Checks if each block contains each value only once
     """
-    blocksize = math.sqrt(size)
-    print(blocksize)
+    blocksize = int(math.sqrt(size))
+    row_num = 0
+    col_num = 0
     for block_num in range(size):
         numbercontained = [False for x in range(size)]
         for value_num in range(size):
-            row_num =
-            value = matrix[row_num % blocksize][val % blocksize]
+            value = matrix[row_num][col_num]
             # if placeholder, ignore it
             if value in range(size):
                 if numbercontained[value]:
@@ -104,15 +104,67 @@ def checkblocks(matrix, size):
                     return False
                 else:
                     numbercontained[value] = True
+            col_num += 1
+            if col_num % blocksize == 0:
+                col_num -= 4
+                row_num += 1
+        col_num += blocksize
+        row_num -= blocksize
+        if col_num == size:
+            col_num = 0
+            row_num += blocksize
     print("blocks are fine")
     return True
 
 
+def checksudoku(matrix, size):
+    """
+    Checks if matrix contains a valid (partially) filled out sudoku
+    """
+    if checkrows(matrix, size):
+        if checkcols(matrix, size):
+            if checkblocks(matrix, size):
+                return True
+    return False
+
+
+def trysudoku(matrix, size, row, col, value):
+    """
+    Tries to insert value to matrix[row][col] and
+    checks if it is a valid sudoku. If yes, the
+    new matrix is returned, if not the change is
+    undone and the old matrix is returned.
+    """
+    oldvalue = matrix[row][col]
+    matrix[row][col] = value
+    if checksudoku(matrix, size):
+        # keep change
+        return matrix, True
+    else:
+        # undo change
+        matrix[row][col] = oldvalue
+        return matrix, False
+
+
+def generatesudoku(size):
+    # check if size is square number
+    if not (math.sqrt(size)).is_integer():
+        print("{0} is not a square number!".format(size))
+        return
+
+    matrix = creatematrix(size, size, size)
+    for row in range(size):
+        for col in range(size):
+            # TODO: randomize value
+            for value in range(size):
+                matrix, success = trysudoku(matrix, size, row, col, value)
+                print(success)
+                if (success):
+                    printmatrixhex(matrix)
+
+
 def main():
-    matrix = creatematrix(16, 16, 16)
-    printmatrixhex(matrix)
-    checkrows(matrix, 16)
-    checkcols(matrix, 16)
+    generatesudoku(16)
 
 
 if __name__ == "__main__":
