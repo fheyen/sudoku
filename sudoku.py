@@ -9,6 +9,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
 import math
 import random
 
@@ -27,17 +28,15 @@ def creatematrix(w, h, initialval):
     return matrix
 
 
-def printmatrix(matrix):
-    for row in matrix:
-        print(row)
+def createemptysudoku(size):
+    return creatematrix(size, size, size)
 
 
 def printmatrixhex(matrix):
     """
     Prints a 16 x 16 sudoku matrix with grid lines
     """
-    lookup = ["0", "1", "2", "3", "4", "5", "6",
-              "7", "8", "9", "a", "b", "c", "d", "e", "f", "-"]
+    lookup = "0123456789abcdefghijklmnopqrstuvwxyz"
     output = ""
     row_num = 0
     output += "-" * 61 + "\n"
@@ -52,6 +51,35 @@ def printmatrixhex(matrix):
         output += "\n"
         if (row_num % 4 == 3):
             output += "-" * 61 + "\n"
+        row_num += 1
+    print(output)
+
+
+def printmatrix(matrix):
+    """
+    Prints a n x n sudoku matrix with grid lines
+    """
+    size = len(matrix)
+    blocksize = int(math.sqrt(size))
+    lookup = "0123456789abcdefghijklmnopqrstuvwxyz"
+    output = ""
+    row_num = 0
+    output += "-" * (1 + (blocksize*3+3)*blocksize) + "\n"
+    for row in matrix:
+        output += "|  "
+        col_num = 0
+        for value in row:
+            if value >= size:
+                value = "-"
+            elif value < len(lookup):
+                value = lookup[value]
+            output += str(value) + "  "
+            if col_num % blocksize == blocksize-1:
+                output += "|  "
+            col_num += 1
+        output += "\n"
+        if (row_num % blocksize == blocksize-1):
+            output += "-" * (1 + (blocksize*3+3)*blocksize) + "\n"
         row_num += 1
     print(output)
 
@@ -121,7 +149,7 @@ def checkblocks(matrix):
                     numbercontained[value] = True
             col_num += 1
             if col_num % blocksize == 0:
-                col_num -= 4
+                col_num -= blocksize
                 row_num += 1
         col_num += blocksize
         row_num -= blocksize
@@ -167,35 +195,6 @@ def getrandomarray(size):
     return array
 
 
-def generatesudoku(size):
-    """
-    Generates a fully filled out sudoku with
-    the specified size
-    """
-    # check if size is square number
-    if not (math.sqrt(size)).is_integer():
-        print("{0} is not a square number!".format(size))
-        return
-
-    matrix = creatematrix(size, size, size)
-    total_tries = 0
-    for row in range(size):
-        for col in range(size):
-            try_num = 1
-            for value in range(size):
-                matrix, success = trysudoku(matrix, row, col, value)
-                if success:
-                    if verbose:
-                        print("success after {0} tries:".format(try_num))
-                        printmatrixhex(matrix)
-                    total_tries += try_num
-                    # no further tries required
-                    break
-                else:
-                    try_num += 1
-    return matrix
-
-
 def recurse(matrix, row, col, depth):
     size = len(matrix)
 
@@ -205,9 +204,8 @@ def recurse(matrix, row, col, depth):
         col_new = 0
         row_new = row + 1
 
-    # randomize value
+    # randomize value order
     array = getrandomarray(size)
-
     for value in array:
         # test if valid
         matrix, success = trysudoku(matrix, row, col, value)
@@ -228,7 +226,7 @@ def recurse(matrix, row, col, depth):
     return matrix, False
 
 
-def generatesudoku_randomized_tree(size):
+def generatesudoku(size):
     """
     Generates a fully filled out sudoku with
     the specified size.
@@ -238,9 +236,9 @@ def generatesudoku_randomized_tree(size):
     # check if size is square number
     if not (math.sqrt(size)).is_integer():
         print("{0} is not a square number!".format(size))
-        return
+        sys.exit(1)
 
-    matrix = creatematrix(size, size, size)
+    matrix = createemptysudoku(size)
     matrix, finished = recurse(matrix, 0, 0, 0)
     return matrix, finished
 
@@ -249,9 +247,19 @@ def main():
     global verbose
     verbose = False
 
-    result, finished = generatesudoku_randomized_tree(16)
+    size = 9
+
+    if len(sys.argv) == 2:
+        size = int(sys.argv[1])
+    else:
+        print("possible arguments: sudoku-size")
+
+    print("sudoku size: ", size)
+
+    result, finished = generatesudoku(size)
     print("finished: ", finished)
-    printmatrixhex(result)
+
+    printmatrix(result)
 
 
 if __name__ == "__main__":
