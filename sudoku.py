@@ -175,6 +175,57 @@ def getpreviousfield(row, col, size):
     return row, col
 
 
+def recurse(matrix, row, col):
+    """
+    Generates a fully filled out sudoku with
+    the specified size.
+    Tree search with randomized value choice.
+    """
+    size = len(matrix)
+
+    col_new = col + 1
+    row_new = row
+    if col_new == size:
+        col_new = 0
+        row_new = row + 1
+
+    # randomize value order
+    array = getrandomarray(size)
+    for value in array:
+        # test if valid
+        matrix, success = trysudoku(matrix, row, col, value)
+        if success:
+            # check if sudoku is filled out completely
+            if row == size - 1 and col == size - 1:
+                return matrix, True
+            else:
+                # if not finished, recurse deeper
+                matrix, finished = recurse(
+                    matrix, row_new, col_new)
+                if finished:
+                    # pass on result
+                    return matrix, True
+
+    # no success? return and try other path
+    return matrix, False
+
+
+def generatesudoku(size):
+    """
+    Generates a fully filled out sudoku with
+    the specified size.
+    Tree search with randomized value choice.
+    """
+    # check if size is square number
+    if not (math.sqrt(size)).is_integer():
+        print("{0} is not a square number!".format(size))
+        sys.exit(1)
+
+    matrix = createemptysudoku(size)
+    matrix, finished = recurse(matrix, 0, 0)
+    return matrix, finished
+
+
 def generatesudoku_iterative(size):
     """
     Generates a fully filled out sudoku with
@@ -282,9 +333,7 @@ def main(size=9, gap_probability=0.5):
     print("\nsudoku size: ", size)
 
     # try until finished or too many tries
-    start = time.time()
     result, finished = generatesudoku_iterative(size)
-    print("\ntime: {0:3.1f}s".format(time.time() - start))
 
     if finished:
         printsudoku(result)
