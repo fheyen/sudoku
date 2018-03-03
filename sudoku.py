@@ -185,22 +185,23 @@ def generatesudoku_iterative(size):
     sudoku = createemptysudoku(size)
     # keep track of shuffled values current index
     # for each field in the sudoku
-    value_index_tuples = create2dimarray(size, size, None)
+    values = create2dimarray(size, size, None)
+    indices = create2dimarray(size, size, 0)
 
     # only create shuffled values once
     for r in range(size):
         for c in range(size):
-            value_index_tuples[r][c] = (getrandomarray(size), 0)
+            values[r][c] = getrandomarray(size)
 
     # fill out sudoku field by field and
     # go back one field if failed
     row = 0
     col = 0
     num_tests = 0
-    print("number of tests:")
+    start = time.time()
+    lasttimeprinted = start
     while(True):
-        index = value_index_tuples[row][col][1]
-
+        index = indices[row][col]
         if index >= size:
             # all values failed, reset current field
             # and go back to previous field
@@ -208,41 +209,35 @@ def generatesudoku_iterative(size):
             row, col = getpreviousfield(row, col, size)
             # check if failed completely
             if row <= -1:
-                print(num_tests)
                 return sudoku, False
             # increase index of previous field
-            value_index_tuples[row][col] = (
-                value_index_tuples[row][col][0],
-                value_index_tuples[row][col][1] + 1)
+            indices[row][col] += 1
         else:
-            # show performance message
-            num_tests += 1
-            if num_tests % 1000 == 0:
-                print(num_tests, end="\r")
-
             # test next value
-            value = value_index_tuples[row][col][0][index]
+            num_tests += 1
+            value = values[row][col][index]
             sudoku, success = trysudoku(sudoku, row, col, value)
-
             if success:
                 # go to next field
                 row, col = getnextfield(row, col, size)
                 # check if finished
                 if row >= size:
-                    print(num_tests)
                     return sudoku, True
                 else:
                     # reset index of next field
-                    value_index_tuples[row][col] = (
-                        value_index_tuples[row][col][0],
-                        0)
+                    indices[row][col] = 0
             else:
                 # increase index of current field
-                value_index_tuples[row][col] = (
-                    value_index_tuples[row][col][0],
-                    value_index_tuples[row][col][1] + 1)
+                indices[row][col] += 1
 
-    print(num_tests)
+        # show performance message every 5 seconds
+        currenttime = time.time()
+        timespent = currenttime - start
+        if currenttime - lasttimeprinted > 5:
+            print("time: {:.1f}s, number of tests: {:d}, tests per second: {:.1f}       ".format(
+                timespent, num_tests, num_tests / timespent), end="\r")
+            lasttimeprinted = currenttime
+
     return sudoku, False
 
 
@@ -263,6 +258,7 @@ def solvesudoku(sudoku):
     Solves a partially filled out sudoku
     """
     # TODO:
+    # for each field, get all possible values
 
 
 def main(size=9, gap_probability=0.5):
