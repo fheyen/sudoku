@@ -1,5 +1,7 @@
 # sudoku
 
+[github.com/fheyen/sudoku/](https://github.com/fheyen/sudoku/)
+
 A Sudoku generator written in Python. Able to generate sudokus in various sizes (square numbers only). Tested with 1, 4, 9, 16 and 25. 36 works if `recursion_limit` is set to a value of 2000. Large sudokus may take a lot of time to generate.
 
 ## Usage
